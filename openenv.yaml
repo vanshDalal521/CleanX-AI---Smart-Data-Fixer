@@ -1,0 +1,23 @@
+spec_version: 1
+name: cleanx
+description: "A real-world data cleaning environment for evaluating AI agents. Supports CSV cleaning tasks including column renaming, row dropping, data type casting, and symbol removal."
+type: space
+runtime: fastapi
+app: server.app:app
+port: 8000
+
+tasks:
+  - id: easy
+    difficulty: easy
+    goal: "Rename columns and drop missing values."
+  - id: medium
+    difficulty: medium
+    goal: "Handle duplicates, cast date types, and clean currency symbols."
+  - id: hard
+    difficulty: hard
+    goal: "Multi-step complex cleaning: handle ERR strings, cast multiple types, and rename schema."
+
+metadata:
+  version: "1.0.0"
+  author: "Antigravity AI"
+  tags: ["data-cleaning", "pandas", "automation", "real-world"]

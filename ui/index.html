@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanX AI - Smart Data Fixer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: #0f0c29;
+            background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+        .neon-text {
+            background: linear-gradient(90deg, #ff00cc, #3333ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,0,204,0.4); } 70% { box-shadow: 0 0 0 15px rgba(255,0,204,0); } 100% { box-shadow: 0 0 0 0 rgba(255,0,204,0); } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen text-gray-100 p-8">
+    <div class="max-w-7xl mx-auto space-y-12">
+        
+        <div class="text-center space-y-4">
+            <h1 class="text-6xl font-extrabold tracking-tight neon-text">CleanX AI</h1>
+            <p class="text-xl text-gray-400">Smart Data Fixer • OpenEnv Simulation</p>
+            <div id="statusBadge" class="inline-block px-4 py-2 mt-4 glass-panel text-sm text-green-400 font-mono pulse">
+                STATUS: AGENT READY
+            </div>
+        </div>
+
+        <!-- NEW: Interactive Controls -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10 transition-transform duration-500 hover:scale-[1.01]">
+            <div class="glass-panel p-6 shadow-[0_0_30px_rgba(255,0,204,0.1)]">
+                <h2 class="text-xl font-semibold mb-4 text-purple-300">1. Custom CSV Upload</h2>
+                <div class="flex flex-col space-y-3">
+                    <input type="file" id="csvFile" accept=".csv" class="file:bg-purple-600 file:border-0 file:text-white file:px-4 file:py-2 file:rounded file:font-bold file:mr-4 hover:file:bg-purple-500 cursor-pointer text-sm text-gray-400">
+                    <input type="text" id="customGoal" placeholder="Goal (e.g. Clean dates and fix names)" class="bg-black/50 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+                    <button onclick="uploadCsv()" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-4 py-2 rounded font-bold transition text-gray-300">Upload & Init Mode</button>
+                    <p id="uploadStatus" class="text-xs text-green-400 font-mono"></p>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 shadow-[0_0_30px_rgba(51,51,255,0.1)]">
+                <h2 class="text-xl font-semibold mb-4 text-blue-300">2. Run AI Fix All</h2>
+                <div class="flex flex-col space-y-3">
+                    <input type="password" id="apiKey" placeholder="sk-... (OpenAI API Key)" class="bg-black/50 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                    <button onclick="runAi()" id="runAiBtn" class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 px-4 py-3 rounded font-bold transition shadow-[0_0_15px_rgba(51,51,255,0.5)] text-white flex justify-center items-center">
+                        <span id="runAiText">Start Fix All (Auto-Pilot)</span>
+                    </button>
+                    <p class="text-xs text-gray-500">Powered by OpenEnv environment inference script.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Outputs -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10 transition-transform duration-500 hover:scale-[1.01]">
+            <div class="glass-panel p-6 space-y-4 flex flex-col h-[500px]">
+                <h2 class="text-2xl font-semibold border-b border-gray-700 pb-2">Environment State</h2>
+                <div id="goalBox" class="text-gray-300 italic text-sm mb-2 h-16 bg-black/30 p-2 rounded border border-gray-800 overflow-y-auto">
+                    Awaiting Task Goal...
+                </div>
+                <div class="flex-1 overflow-auto rounded border border-gray-800">
+                    <pre id="dataPreview" class="text-xs font-mono text-gray-300 bg-black/50 p-4 min-h-full">Loading Dataset Viewer...</pre>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 space-y-4 flex flex-col h-[500px]">
+                <h2 class="text-2xl font-semibold border-b border-gray-700 pb-2 flex justify-between items-center">
+                    <span>AI Event Logs</span>
+                    <span id="scoreBadge" class="text-sm bg-blue-900/50 px-3 py-1 rounded text-blue-300 font-mono">Score: 0.0</span>
+                </h2>
+                <div id="logs" class="flex-1 space-y-3 overflow-y-auto pr-2 text-sm font-mono text-gray-400 bg-black/30 p-4 rounded border border-gray-800">
+                </div>
+                <div class="pt-4 border-t border-gray-700 flex space-x-4">
+                    <button onclick="pollState()" class="flex-1 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded font-bold transition text-gray-300">Refresh State</button>
+                    <button onclick="resetEnv()" class="flex-1 border border-red-500/50 hover:bg-red-900/40 px-4 py-2 rounded font-bold transition text-red-400">Random Hard Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addLog(msg, color="text-gray-400") {
+            const logs = document.getElementById('logs');
+            const p = document.createElement('p');
+            p.className = color;
+            p.innerHTML = `> ${msg}`;
+            logs.appendChild(p);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        async function resetEnv() {
+            try {
+                addLog('Sending POST /reset to OpenEnv engine...', 'text-yellow-400');
+                const res = await fetch('/reset', { method: 'POST' });
+                const json = await res.json();
+                
+                document.getElementById('dataPreview').textContent = json.observation.dataset_preview;
+                document.getElementById('goalBox').innerHTML = `<span class="text-blue-400 font-bold">TASK:</span> ${json.observation.goal}`;
+                document.getElementById('scoreBadge').textContent = `Score: ${json.observation.progress.toFixed(2)}`;
+                
+                addLog('Reset successful. Dataset initialized.', 'text-green-400');
+            } catch (e) {
+                addLog(`Connection error: ${e.message}`, 'text-red-500');
+            }
+        }
+        
+        async function pollState() {
+            try {
+                const res = await fetch('/reset', { method: 'POST' }); // Usually state() doesn't return full dataset. Let's just reset or update. But if we want current observation we should call step with an empty 'none' action.
+                const json = await res.json();
+                addLog(`Manually refreshed. Score: ${json.observation.progress}`, 'text-pink-400');
+                document.getElementById('dataPreview').textContent = json.observation.dataset_preview;
+            } catch (e) {}
+        }
+
+        async function uploadCsv() {
+            const customGoal = document.getElementById("customGoal").value;
+            const fileInput = document.getElementById("csvFile");
+            if (!fileInput.files.length) {
+                alert("Please select a CSV file first.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            formData.append("goal", customGoal || "Clean this custom dataset optimally.");
+
+            addLog("Uploading custom CSV...", "text-yellow-400");
+            try {
+                const res = await fetch('/upload_custom', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.status === "success") {
+                    document.getElementById('uploadStatus').textContent = "Upload OK. Initializing environment...";
+                    await resetEnv(); // This will trigger the global hook we added!
+                } else {
+                    addLog(`Upload error: ${data.error}`, "text-red-500");
+                }
+            } catch (e) {
+                addLog(`Upload failed: ${e.message}`, "text-red-500");
+            }
+        }
+
+        async function runAi() {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey.startsWith("sk-")) {
+                alert("Please paste a valid OpenAI API key starting with 'sk-'");
+                return;
+            }
+
+            const btnText = document.getElementById('runAiText');
+            const statusBadge = document.getElementById('statusBadge');
+            
+            btnText.textContent = "AI is running...";
+            statusBadge.textContent = "STATUS: AGENT WORKING";
+            statusBadge.classList.replace("text-green-400", "text-yellow-400");
+            addLog("Deploying inference script to clean dataset...", "text-blue-400");
+
+            const formData = new FormData();
+            formData.append("api_key", apiKey);
+
+            try {
+                // This triggers the Python subprocess
+                const res = await fetch('/run_ai_demo', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                // Show output in logs
+                if (data.output) {
+                    let logText = data.output;
+                    // Extract CSV final state
+                    const csvMatch = logText.match(/<FINAL_CSV>\n([\s\S]*?)\n<\/FINAL_CSV>/);
+                    if (csvMatch) {
+                        document.getElementById('dataPreview').textContent = csvMatch[1];
+                        logText = logText.replace(csvMatch[0], "");
+                    }
+
+                    const lines = logText.split('\n');
+                    for (let line of lines) {
+                        if (line.trim()) addLog(line, "text-gray-300");
+                    }
+                    addLog("AI task completed. Showing final cleaned output in viewer.", "text-green-300");
+                }
+                if (data.error) {
+                    addLog(`AI Script Error: ${data.error}`, "text-red-500");
+                }
+                
+            } catch (e) {
+                addLog(`AI run failed: ${e.message}`, "text-red-500");
+            } finally {
+                btnText.textContent = "Start Fix All (Auto-Pilot)";
+                statusBadge.textContent = "STATUS: AGENT READY";
+                statusBadge.classList.replace("text-yellow-400", "text-green-400");
+            }
+        }
+
+        window.addEventListener('load', () => {
+             addLog("CleanX Setup Complete: Awaiting Custom CSV Upload.", "text-blue-400");
+             document.getElementById('dataPreview').textContent = "No dataset loaded. Upload a messy CSV file to begin your cleaning session.";
+             document.getElementById('goalBox').innerHTML = `<span class="text-blue-400 font-bold">TASK:</span> Awaiting custom schema goals...`;
+        });
+    </script>
+</body>
+</html>
