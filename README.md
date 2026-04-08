@@ -1,4 +1,18 @@
+---
+title: CleanX AI
+emoji: 🧹
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8000
+tags:
+- openenv
+- data-cleaning
+pinned: false
+---
+
 # CleanX AI - Smart Data Fixer (OpenEnv)
+
 
 CleanX AI is a high-fidelity environment designed to evaluate AI agents on real-world data cleaning tasks. It simulates scenarios where an agent must transform messy, inconsistent CSV data into a clean, structured schema.
 
