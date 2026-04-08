@@ -116,7 +116,9 @@ class CleanxEnvironment(Environment):
                     score += 0.2
         except Exception:
             pass
-        return min(max(score, 0.0), 1.0)
+        # Clamp strictly between 0.01 and 0.99 for competition validation
+        return min(max(score, 0.01), 0.99)
+
 
     def step(self, action: CleanxAction) -> CleanxObservation:
         self._state.step_count += 1
@@ -162,7 +164,7 @@ class CleanxEnvironment(Environment):
             error_msg = f"Action failed: {str(e)}"
             
         reward = self._evaluate()
-        done = reward >= 1.0 or action.operation == "submit" or self._state.step_count >= 15
+        done = reward >= 0.99 or action.operation == "submit" or self._state.step_count >= 15
         
         return self._make_observation(reward, done, error_msg)
 
